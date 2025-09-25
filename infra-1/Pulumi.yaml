@@ -1,0 +1,11 @@
+name: neo-infra-1
+description: Simple AWS infrastructure for compliance demo
+runtime:
+  name: python
+  options:
+    toolchain: pip
+    virtualenv: venv
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: aws-python
