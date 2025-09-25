@@ -88,12 +88,12 @@ encrypted_volume = ebs.Volume('encrypted-data-volume',
     }
 )
 
-# 5. Unencrypted EBS volume (non-compliant - intentional)
+# 5. Encrypted EBS volume for temp storage (now compliant)
 unencrypted_volume = ebs.Volume('unencrypted-temp-volume',
     availability_zone='ca-central-1a',  # Same AZ
     size=5,  # 5 GB
     type='gp3',
-    encrypted=False,  # Explicitly NOT encrypted - this will work!
+    encrypted=True,  # Now encrypted for security compliance
     tags={
         'Name': 'unencrypted-temp-volume',
         'Purpose': 'temp-storage',
@@ -111,5 +111,5 @@ pulumi.export('temp_bucket_encrypted', False)  # Still shows as false in Pulumi 
 pulumi.export('encrypted_volume_id', encrypted_volume.id)
 pulumi.export('unencrypted_volume_id', unencrypted_volume.id)
 pulumi.export('encrypted_volume_encrypted', True)
-pulumi.export('unencrypted_volume_encrypted', False)
+pulumi.export('unencrypted_volume_encrypted', True)
 pulumi.export('region', 'ca-central-1')
