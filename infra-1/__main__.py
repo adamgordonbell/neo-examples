@@ -1,7 +1,8 @@
 """Simple AWS infrastructure for compliance demo"""
 
 import pulumi
-from pulumi_aws import s3
+from pulumi_aws import s3, ebs
+import pulumi_command as command
 
 # Create multiple S3 buckets for different purposes
 
@@ -32,7 +33,15 @@ backup_bucket = s3.Bucket('backup-bucket',
 # 3. Unencrypted bucket for temp data (non-compliant - intentional)
 temp_bucket = s3.Bucket('temp-bucket',
     bucket='neo-temp-bucket-ca'
-    # No encryption configuration - this will be flagged by SOC2 policies
+    # We'll forcibly remove encryption after creation
+)
+
+# Use command provider to force remove encryption after bucket creation
+remove_encryption = command.local.Command('remove-temp-bucket-encryption',
+    create=pulumi.Output.concat(
+        'aws s3api delete-bucket-encryption --bucket ', temp_bucket.bucket, ' || true'
+    ),
+    opts=pulumi.ResourceOptions(depends_on=[temp_bucket])
 )
 
 # Create files in the encrypted buckets
@@ -65,11 +74,42 @@ config_file = s3.BucketObject('temp-config',
     content_type='text/yaml'
 )
 
-# Export bucket information
+# Add EBS volumes - some encrypted, some not (for actual unencrypted resources)
+# 4. Encrypted EBS volume (compliant)
+encrypted_volume = ebs.Volume('encrypted-data-volume',
+    availability_zone='ca-central-1a',  # Hard-code AZ for now
+    size=10,  # 10 GB
+    type='gp3',
+    encrypted=True,  # Explicitly encrypted
+    tags={
+        'Name': 'encrypted-data-volume',
+        'Purpose': 'sensitive-data',
+        'Environment': 'production'
+    }
+)
+
+# 5. Unencrypted EBS volume (non-compliant - intentional)
+unencrypted_volume = ebs.Volume('unencrypted-temp-volume',
+    availability_zone='ca-central-1a',  # Same AZ
+    size=5,  # 5 GB
+    type='gp3',
+    encrypted=False,  # Explicitly NOT encrypted - this will work!
+    tags={
+        'Name': 'unencrypted-temp-volume',
+        'Purpose': 'temp-storage',
+        'Environment': 'development'
+    }
+)
+
+# Export all resource information
 pulumi.export('logs_bucket_name', logs_bucket.id)
 pulumi.export('backup_bucket_name', backup_bucket.id)
 pulumi.export('temp_bucket_name', temp_bucket.id)
 pulumi.export('logs_bucket_encrypted', True)
 pulumi.export('backup_bucket_encrypted', True)
-pulumi.export('temp_bucket_encrypted', False)
+pulumi.export('temp_bucket_encrypted', False)  # Still shows as false in Pulumi even though AWS encrypts it
+pulumi.export('encrypted_volume_id', encrypted_volume.id)
+pulumi.export('unencrypted_volume_id', unencrypted_volume.id)
+pulumi.export('encrypted_volume_encrypted', True)
+pulumi.export('unencrypted_volume_encrypted', False)
 pulumi.export('region', 'ca-central-1')
