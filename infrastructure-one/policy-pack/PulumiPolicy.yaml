@@ -1,0 +1,5 @@
+name: soc2-compliance
+description: SOC2 compliance policy pack for AWS resources
+runtime: python
+policies:
+  - s3-encryption-required
