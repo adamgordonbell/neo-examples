@@ -4,6 +4,7 @@ import pulumi
 from pulumi_aws import s3, ebs
 import pulumi_command as command
 
+
 logs_bucket = s3.Bucket('logs-bucket',
     bucket='neo-logs-bucket-ca',
     server_side_encryption_configuration=s3.BucketServerSideEncryptionConfigurationArgs(
