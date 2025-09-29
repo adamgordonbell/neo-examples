@@ -82,12 +82,12 @@ encrypted_volume = ebs.Volume('encrypted-data-volume',
     }
 )
 
-# 5. Encrypted EBS volume for temporary storage
+# 5. Unencrypted EBS volume (non-compliant - intentional)
 unencrypted_volume = ebs.Volume('unencrypted-temp-volume',
     availability_zone='ca-central-1a',  # Same AZ
     size=5,  # 5 GB
     type='gp3',
-    encrypted=True,
+    encrypted=False,
     tags={
         'Name': 'unencrypted-temp-volume',
         'Purpose': 'temp-storage',
