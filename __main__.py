@@ -6,29 +6,33 @@ import pulumi_command as command
 
 
 logs_bucket = s3.Bucket('logs-bucket',
-    bucket='neo-logs-bucket-ca',
-    server_side_encryption_configuration=s3.BucketServerSideEncryptionConfigurationArgs(
-        rule=s3.BucketServerSideEncryptionConfigurationRuleArgs(
-            apply_server_side_encryption_by_default=s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
-                sse_algorithm="AES256"
-            )
-        )
-    )
+    bucket='neo-logs-bucket-ca'
 )
 
 backup_bucket = s3.Bucket('backup-bucket',
-    bucket='neo-backup-bucket-ca',
-    server_side_encryption_configuration=s3.BucketServerSideEncryptionConfigurationArgs(
-        rule=s3.BucketServerSideEncryptionConfigurationRuleArgs(
-            apply_server_side_encryption_by_default=s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
-                sse_algorithm="AES256"
-            )
-        )
-    )
+    bucket='neo-backup-bucket-ca'
 )
 
 temp_bucket = s3.Bucket('temp-bucket',
     bucket='neo-temp-bucket-ca'
+)
+
+logs_bucket_encryption = s3.BucketServerSideEncryptionConfiguration('logs-bucket-encryption',
+    bucket=logs_bucket.id,
+    rules=[s3.BucketServerSideEncryptionConfigurationRuleArgs(
+        apply_server_side_encryption_by_default=s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
+            sse_algorithm="AES256"
+        )
+    )]
+)
+
+backup_bucket_encryption = s3.BucketServerSideEncryptionConfiguration('backup-bucket-encryption',
+    bucket=backup_bucket.id,
+    rules=[s3.BucketServerSideEncryptionConfigurationRuleArgs(
+        apply_server_side_encryption_by_default=s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
+            sse_algorithm="AES256"
+        )
+    )]
 )
 
 remove_encryption = command.local.Command('remove-temp-bucket-encryption',
