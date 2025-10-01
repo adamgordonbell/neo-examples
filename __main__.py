@@ -124,9 +124,9 @@ cluster = eks.Cluster(
 )
 
 # -----------------------------
-# Managed Node Group
+# Managed Node Groups
 # -----------------------------
-# Single node group: keeps kube-system (CoreDNS, CNI, etc.) instantly available
+# System node group: keeps kube-system (CoreDNS, CNI, etc.) instantly available
 system_ng = eks.ManagedNodeGroup(
     "mng-system",
     cluster=cluster,
@@ -137,6 +137,21 @@ system_ng = eks.ManagedNodeGroup(
         min_size=1,
         desired_size=1,
         max_size=2,
+    ),
+    ami_type="AL2023_x86_64_STANDARD",
+)
+
+# Burst node group: additional capacity for workload scaling
+burst_ng = eks.ManagedNodeGroup(
+    "mng-burst",
+    cluster=cluster,
+    instance_types=["t3.small"],
+    node_role=node_role,
+    subnet_ids=subnet_ids,
+    scaling_config=aws.eks.NodeGroupScalingConfigArgs(
+        min_size=0,
+        desired_size=2,
+        max_size=4,
     ),
     ami_type="AL2023_x86_64_STANDARD",
 )
