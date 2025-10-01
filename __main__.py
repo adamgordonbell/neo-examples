@@ -114,8 +114,9 @@ cluster = eks.Cluster(
     subnet_ids=subnet_ids,
     skip_default_node_group=True,  # we'll add our own managed node group
     create_oidc_provider=True,     # helpful for IRSA / add-ons later
-    instance_roles=[node_role],    # register the node role with the cluster
     # CRITICAL: Use API auth mode to avoid aws-auth ConfigMap bootstrap issues
+    # Note: instance_roles is not supported with API auth mode - roles are
+    # registered automatically via access entries instead
     authentication_mode=eks.AuthenticationMode.API,
     # Disable managed CoreDNS add-on to avoid its (sometimes slow) lifecycle
     coredns_addon_options=eks.CoreDnsAddonOptionsArgs(enabled=False),
