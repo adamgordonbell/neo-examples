@@ -1,102 +1,148 @@
-"""Simple AWS infrastructure for compliance demo"""
+"""Fast-demo EKS: warm DNS + pre-created pools"""
 
 import pulumi
-from pulumi_aws import s3, ebs
-import pulumi_command as command
+import pulumi_aws as aws
+import pulumi_eks as eks
 
-
-logs_bucket = s3.Bucket('logs-bucket',
-    bucket='neo-logs-bucket-ca'
+# -----------------------------
+# Networking (simple & public)
+# -----------------------------
+vpc = aws.ec2.Vpc(
+    "eks-vpc",
+    cidr_block="10.0.0.0/16",
+    enable_dns_hostnames=True,
+    enable_dns_support=True,
+    tags={"Name": "eks-vpc"},
 )
 
-backup_bucket = s3.Bucket('backup-bucket',
-    bucket='neo-backup-bucket-ca'
+igw = aws.ec2.InternetGateway(
+    "eks-igw",
+    vpc_id=vpc.id,
+    tags={"Name": "eks-igw"},
 )
 
-temp_bucket = s3.Bucket('temp-bucket',
-    bucket='neo-temp-bucket-ca'
+public_subnet_1 = aws.ec2.Subnet(
+    "public-subnet-1",
+    vpc_id=vpc.id,
+    cidr_block="10.0.1.0/24",
+    availability_zone="ca-central-1a",
+    map_public_ip_on_launch=True,
+    tags={
+        "Name": "public-subnet-1",
+        "kubernetes.io/role/elb": "1",
+    },
 )
 
-logs_bucket_encryption = s3.BucketServerSideEncryptionConfiguration('logs-bucket-encryption',
-    bucket=logs_bucket.id,
-    rules=[s3.BucketServerSideEncryptionConfigurationRuleArgs(
-        apply_server_side_encryption_by_default=s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
-            sse_algorithm="AES256"
-        )
-    )]
+public_subnet_2 = aws.ec2.Subnet(
+    "public-subnet-2",
+    vpc_id=vpc.id,
+    cidr_block="10.0.2.0/24",
+    availability_zone="ca-central-1b",
+    map_public_ip_on_launch=True,
+    tags={
+        "Name": "public-subnet-2",
+        "kubernetes.io/role/elb": "1",
+    },
 )
 
-backup_bucket_encryption = s3.BucketServerSideEncryptionConfiguration('backup-bucket-encryption',
-    bucket=backup_bucket.id,
-    rules=[s3.BucketServerSideEncryptionConfigurationRuleArgs(
-        apply_server_side_encryption_by_default=s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
-            sse_algorithm="AES256"
-        )
-    )]
+public_rt = aws.ec2.RouteTable(
+    "public-rt",
+    vpc_id=vpc.id,
+    routes=[aws.ec2.RouteTableRouteArgs(cidr_block="0.0.0.0/0", gateway_id=igw.id)],
+    tags={"Name": "public-rt"},
 )
 
-remove_encryption = command.local.Command('remove-temp-bucket-encryption',
-    create=pulumi.Output.concat(
-        'aws s3api delete-bucket-encryption --bucket ', temp_bucket.bucket, ' || true'
+aws.ec2.RouteTableAssociation(
+    "public-rta-1",
+    subnet_id=public_subnet_1.id,
+    route_table_id=public_rt.id,
+)
+aws.ec2.RouteTableAssociation(
+    "public-rta-2",
+    subnet_id=public_subnet_2.id,
+    route_table_id=public_rt.id,
+)
+
+subnet_ids = [public_subnet_1.id, public_subnet_2.id]
+
+# -----------------------------
+# IAM Role for Node Groups
+# -----------------------------
+node_role = aws.iam.Role(
+    "eks-node-role",
+    assume_role_policy="""{
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {"Service": "ec2.amazonaws.com"},
+            "Action": "sts:AssumeRole"
+        }]
+    }""",
+)
+
+# Attach required policies for EKS worker nodes
+aws.iam.RolePolicyAttachment(
+    "eks-node-policy",
+    role=node_role.name,
+    policy_arn="arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+)
+
+aws.iam.RolePolicyAttachment(
+    "eks-cni-policy",
+    role=node_role.name,
+    policy_arn="arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy",
+)
+
+aws.iam.RolePolicyAttachment(
+    "eks-ecr-policy",
+    role=node_role.name,
+    policy_arn="arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+)
+
+# Create instance profile for the node role
+node_instance_profile = aws.iam.InstanceProfile(
+    "eks-node-instance-profile",
+    role=node_role.name,
+)
+
+# -----------------------------
+# EKS Control Plane (no default NG; skip managed CoreDNS add-on)
+# -----------------------------
+cluster = eks.Cluster(
+    "eks-cluster",
+    vpc_id=vpc.id,
+    subnet_ids=subnet_ids,
+    skip_default_node_group=True,  # we'll add Managed Node Groups ourselves
+    create_oidc_provider=True,     # helpful for IRSA / add-ons later
+    instance_roles=[node_role],    # register the node role with the cluster
+    # Disable managed CoreDNS add-on to avoid its (sometimes slow) lifecycle
+    coredns_addon_options=eks.CoreDnsAddonOptionsArgs(enabled=False),
+    tags={"Name": "eks-cluster", "Environment": "development"},
+)
+
+# -----------------------------
+# Managed Node Groups
+# -----------------------------
+# 1) System pool: keeps kube-system (CoreDNS, CNI, etc.) instantly available
+system_ng = eks.ManagedNodeGroup(
+    "mng-system",
+    cluster=cluster,  # pass the full cluster object
+    instance_types=["t3.micro", "t3.small"],  # cheap & fast-to-place
+    node_role=node_role,
+    subnet_ids=subnet_ids,
+    scaling_config=aws.eks.NodeGroupScalingConfigArgs(
+        min_size=1,
+        desired_size=1,   # keep 1 node always-on so DNS is hot
+        max_size=1,
     ),
-    opts=pulumi.ResourceOptions(depends_on=[temp_bucket])
+    # public nodes for demo simplicity
+    ami_type="AL2023_x86_64_STANDARD",
 )
 
-log_file = s3.BucketObject('application-log',
-    bucket=logs_bucket.id,
-    key='logs/app.log',
-    content='2024-09-25 10:00:00 INFO Application started successfully',
-    content_type='text/plain'
-)
-
-backup_file = s3.BucketObject('database-backup',
-    bucket=backup_bucket.id,
-    key='backups/db-backup.sql',
-    content='-- Database backup from 2024-09-25\nCREATE TABLE users (id INT, name VARCHAR(255));',
-    content_type='text/plain'
-)
-
-temp_data = s3.BucketObject('temp-data',
-    bucket=temp_bucket.id,
-    key='temp/processing-data.json',
-    content='{"user_data": {"email": "user@example.com", "api_key": "temp-key-123"}}',
-    content_type='application/json'
-)
-
-config_file = s3.BucketObject('temp-config',
-    bucket=temp_bucket.id,
-    key='config/temp-settings.yaml',
-    content='database:\n  host: prod-db.example.com\n  password: temp-password-456\napi_keys:\n  - service_a: key-789',
-    content_type='text/yaml'
-)
-
-encrypted_volume = ebs.Volume('encrypted-data-volume',
-    availability_zone='ca-central-1a',  # Hard-code AZ for now
-    size=10,  # 10 GB
-    type='gp3',
-    encrypted=True, 
-    tags={
-        'Name': 'encrypted-data-volume',
-        'Purpose': 'sensitive-data',
-        'Environment': 'production'
-    }
-)
-
-# 5. Unencrypted EBS volume (non-compliant - intentional)
-unencrypted_volume = ebs.Volume('unencrypted-temp-volume',
-    availability_zone='ca-central-1a',  # Same AZ
-    size=5,  # 5 GB
-    type='gp3',
-    encrypted=False,
-    tags={
-        'Name': 'unencrypted-temp-volume',
-        'Purpose': 'temp-storage',
-        'Environment': 'development'
-    }
-)
-
-# Export all resource information
-pulumi.export('logs_bucket_name', logs_bucket.id)
-pulumi.export('encrypted_volume_id', encrypted_volume.id)
-pulumi.export('unencrypted_volume_id', unencrypted_volume.id)
-pulumi.export('region', 'ca-central-1')
+# -----------------------------
+# Useful exports
+# -----------------------------
+pulumi.export("cluster_name", cluster.eks_cluster.name)
+pulumi.export("kubeconfig", cluster.kubeconfig)
+pulumi.export("vpc_id", vpc.id)
+pulumi.export("region", "ca-central-1")

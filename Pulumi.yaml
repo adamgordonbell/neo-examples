@@ -1,5 +1,5 @@
 name: neo-infra-1
-description: Simple AWS infrastructure for compliance demo
+description: AWS EKS cluster with t3.small node pool
 runtime:
   name: python
   options:

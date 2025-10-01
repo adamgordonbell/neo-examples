@@ -1,4 +1,7 @@
 config:
   aws:region: ca-central-1
+  aws:defaultTags:
+    tags:
+      Owner: v-adam@pulumi.com
 environment:
   - oidc/oidc
