@@ -134,8 +134,8 @@ system_ng = eks.ManagedNodeGroup(
     node_role=node_role,
     subnet_ids=subnet_ids,
     scaling_config=aws.eks.NodeGroupScalingConfigArgs(
-        min_size=1,
-        desired_size=1,
+        min_size=0,
+        desired_size=0,
         max_size=2,
     ),
     ami_type="AL2023_x86_64_STANDARD",
