@@ -141,21 +141,6 @@ system_ng = eks.ManagedNodeGroup(
     ami_type="AL2023_x86_64_STANDARD",
 )
 
-# Burst node group for additional capacity
-burst_ng = eks.ManagedNodeGroup(
-    "mng-burst",
-    cluster=cluster,
-    instance_types=["t3.small"],
-    node_role=node_role,
-    subnet_ids=subnet_ids,
-    scaling_config=aws.eks.NodeGroupScalingConfigArgs(
-        min_size=2,
-        desired_size=2,
-        max_size=4,
-    ),
-    ami_type="AL2023_x86_64_STANDARD",
-)
-
 # -----------------------------
 # Exports
 # -----------------------------
