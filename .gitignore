@@ -1,2 +1,7 @@
 *.pyc
 venv/
+
+# Kubeconfig files (contain sensitive cluster credentials)
+kubeconfig.yaml
+kubeconfig*.yaml
+kubeconfig*.json

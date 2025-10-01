@@ -1,4 +1,4 @@
-"""Fast-demo EKS: warm DNS + pre-created pools"""
+"""EKS cluster with custom networking and single node group"""
 
 import pulumi
 import pulumi_aws as aws
@@ -106,41 +106,42 @@ node_instance_profile = aws.iam.InstanceProfile(
 )
 
 # -----------------------------
-# EKS Control Plane (no default NG; skip managed CoreDNS add-on)
+# EKS Control Plane
 # -----------------------------
 cluster = eks.Cluster(
     "eks-cluster",
     vpc_id=vpc.id,
     subnet_ids=subnet_ids,
-    skip_default_node_group=True,  # we'll add Managed Node Groups ourselves
+    skip_default_node_group=True,  # we'll add our own managed node group
     create_oidc_provider=True,     # helpful for IRSA / add-ons later
     instance_roles=[node_role],    # register the node role with the cluster
+    # CRITICAL: Use API auth mode to avoid aws-auth ConfigMap bootstrap issues
+    authentication_mode=eks.AuthenticationMode.API,
     # Disable managed CoreDNS add-on to avoid its (sometimes slow) lifecycle
     coredns_addon_options=eks.CoreDnsAddonOptionsArgs(enabled=False),
     tags={"Name": "eks-cluster", "Environment": "development"},
 )
 
 # -----------------------------
-# Managed Node Groups
+# Managed Node Group
 # -----------------------------
-# 1) System pool: keeps kube-system (CoreDNS, CNI, etc.) instantly available
+# Single node group: keeps kube-system (CoreDNS, CNI, etc.) instantly available
 system_ng = eks.ManagedNodeGroup(
     "mng-system",
-    cluster=cluster,  # pass the full cluster object
-    instance_types=["t3.micro", "t3.small"],  # cheap & fast-to-place
+    cluster=cluster,
+    instance_types=["t3.small"],
     node_role=node_role,
     subnet_ids=subnet_ids,
     scaling_config=aws.eks.NodeGroupScalingConfigArgs(
         min_size=1,
-        desired_size=1,   # keep 1 node always-on so DNS is hot
-        max_size=1,
+        desired_size=1,
+        max_size=2,
     ),
-    # public nodes for demo simplicity
     ami_type="AL2023_x86_64_STANDARD",
 )
 
 # -----------------------------
-# Useful exports
+# Exports
 # -----------------------------
 pulumi.export("cluster_name", cluster.eks_cluster.name)
 pulumi.export("kubeconfig", cluster.kubeconfig)

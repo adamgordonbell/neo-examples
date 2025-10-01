@@ -1,92 +1,152 @@
- # AWS Python S3 Bucket Pulumi Template
+# AWS EKS Cluster with API Authentication
 
- A minimal Pulumi template for provisioning a single AWS S3 bucket using Python.
+A Pulumi template for provisioning an EKS Kubernetes cluster using API authentication mode.
 
- ## Overview
+## Overview
 
- This template provisions an S3 bucket (`pulumi_aws.s3.BucketV2`) in your AWS account and exports its ID as an output. It’s an ideal starting point when:
-  - You want to learn Pulumi with AWS in Python.
-  - You need a barebones S3 bucket deployment to build upon.
-  - You prefer a minimal template without extra dependencies.
+This template provisions an EKS cluster with:
+- API authentication mode (no aws-auth ConfigMap required)
+- Single node group for system workloads
+- Disabled CoreDNS addon for faster provisioning
+- OIDC provider for IRSA (IAM Roles for Service Accounts)
 
- ## Prerequisites
+## Prerequisites
 
- - An AWS account with permissions to create S3 buckets.
- - AWS credentials configured in your environment (for example via AWS CLI or environment variables).
- - Python 3.6 or later installed.
- - Pulumi CLI already installed and logged in.
+- An AWS account with permissions to create EKS clusters
+- AWS credentials configured via Pulumi ESC environment (`oidc/oidc`)
+- Python 3.6 or later installed
+- Pulumi CLI already installed and logged in
+- `kubectl` installed for cluster access
+- Optional: `k9s` for interactive cluster management
 
- ## Getting Started
+## Getting Started
 
- 1. Generate a new project from this template:
-    ```bash
-    pulumi new aws-python
-    ```
- 2. Follow the prompts to set your project name and AWS region (default: `us-east-1`).
- 3. Change into your project directory:
-    ```bash
-    cd <project-name>
-    ```
- 4. Preview the planned changes:
-    ```bash
-    pulumi preview
-    ```
- 5. Deploy the stack:
-    ```bash
-    pulumi up
-    ```
- 6. Tear down when finished:
-    ```bash
-    pulumi destroy
-    ```
+1. Deploy the stack:
+   ```bash
+   pulumi up
+   ```
 
- ## Project Layout
+2. The cluster will take approximately 10-15 minutes to provision.
 
- After running `pulumi new`, your directory will look like:
- ```
- ├── __main__.py         # Entry point of the Pulumi program
- ├── Pulumi.yaml         # Project metadata and template configuration
- ├── requirements.txt    # Python dependencies
- └── Pulumi.<stack>.yaml # Stack-specific configuration (e.g., Pulumi.dev.yaml)
- ```
+3. Once complete, you can access the cluster using kubectl or k9s.
 
- ## Configuration
+## Configuration
 
- This template defines the following config value:
+Stack configuration values:
 
- - `aws:region` (string)
-   The AWS region to deploy resources into.
-   Default: `us-east-1`
+- `aws:region` - The AWS region to deploy into (default: `ca-central-1`)
+- Stack environment: `oidc/oidc` - Provides AWS credentials via OIDC
 
- View or update configuration with:
- ```bash
- pulumi config get aws:region
- pulumi config set aws:region us-west-2
- ```
+View configuration with:
+```bash
+pulumi config
+```
 
- ## Outputs
+## Accessing the Cluster
 
- Once deployed, the stack exports:
+### Using kubectl
 
- - `bucket_name` — the ID of the created S3 bucket.
+The cluster uses API authentication mode, which requires AWS credentials with proper access entries. The cluster creator role (`pulumi-environments-oidc`) has admin access by default.
 
- Retrieve outputs with:
- ```bash
- pulumi stack output bucket_name
- ```
+**Option 1: Run kubectl through ESC environment**
+```bash
+pulumi env run oidc/oidc -- kubectl get nodes
+pulumi env run oidc/oidc -- kubectl get pods -A
+```
 
- ## Next Steps
+**Option 2: Start a shell with ESC credentials**
+```bash
+pulumi env run oidc/oidc -- zsh
+# Now run kubectl commands directly:
+kubectl get nodes
+kubectl get pods -A
+```
 
- - Customize `__main__.py` to add or configure additional resources.
- - Explore the Pulumi AWS SDK: https://www.pulumi.com/registry/packages/aws/
- - Break your infrastructure into modules for better organization.
- - Integrate into CI/CD pipelines for automated deployments.
+**Option 3: Export kubeconfig and use ESC shell**
+```bash
+pulumi stack output kubeconfig --show-secrets > kubeconfig.yaml
+pulumi env run oidc/oidc -- zsh
+export KUBECONFIG=$(pwd)/kubeconfig.yaml
+kubectl get nodes
+```
 
- ## Help and Community
+### Using k9s
 
- If you have questions or need assistance:
- - Pulumi Documentation: https://www.pulumi.com/docs/
- - Community Slack: https://slack.pulumi.com/
- - GitHub Issues: https://github.com/pulumi/pulumi/issues
+K9s provides an interactive terminal UI for managing Kubernetes clusters:
 
- Contributions and feedback are always welcome!
+```bash
+# Run k9s through ESC environment
+pulumi env run oidc/oidc -- k9s
+
+# Or from within an ESC shell
+pulumi env run oidc/oidc -- zsh
+k9s
+```
+
+## Outputs
+
+Once deployed, the stack exports:
+
+- `cluster_name` — the name of the EKS cluster
+- `kubeconfig` — the kubeconfig for accessing the cluster
+- `region` — the AWS region where the cluster is deployed
+
+Retrieve outputs with:
+```bash
+pulumi stack output cluster_name
+pulumi stack output kubeconfig --show-secrets
+```
+
+## Architecture
+
+The cluster is provisioned with:
+- **Authentication Mode**: API (uses EKS access entries, not aws-auth ConfigMap)
+- **Node Group**: Single auto-scaling group (1-2 t3.small instances)
+- **Networking**: Default VPC configuration managed by Pulumi EKS component
+- **Add-ons**: VPC CNI, kube-proxy (CoreDNS disabled for faster provisioning)
+
+## Key Configuration Choices
+
+### API Authentication Mode
+This cluster uses `authentication_mode: eks.AuthenticationMode.API` which:
+- Eliminates the need for the aws-auth ConfigMap
+- Uses EKS access entries for authorization
+- Simplifies cluster bootstrapping
+- Follows the pattern recommended in Pulumi workshops
+
+### ESC Environment
+The stack uses a Pulumi ESC environment (`oidc/oidc`) which:
+- Provides AWS credentials via OIDC
+- Grants the cluster creator admin access automatically
+- Ensures consistent credentials between Pulumi and kubectl
+
+## Troubleshooting
+
+**"Error: You must be logged in to the server"**
+- This means you're not using the ESC environment credentials
+- Solution: Use `pulumi env run oidc/oidc -- kubectl ...`
+
+**Cluster creation hangs or times out**
+- EKS clusters typically take 10-15 minutes to provision
+- Check CloudWatch logs and AWS Console for details
+
+## Cleanup
+
+Destroy all resources:
+```bash
+pulumi destroy
+```
+
+## Next Steps
+
+- Add additional node groups with different instance types
+- Configure cluster autoscaling
+- Install add-ons (ingress controllers, monitoring, etc.)
+- Deploy applications using Pulumi's Kubernetes provider
+
+## Help and Community
+
+- Pulumi Documentation: https://www.pulumi.com/docs/
+- EKS Package: https://www.pulumi.com/registry/packages/eks/
+- Community Slack: https://slack.pulumi.com/
+- GitHub Issues: https://github.com/pulumi/pulumi/issues
