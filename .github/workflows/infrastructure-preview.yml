@@ -57,7 +57,24 @@ jobs:
         run: |
           echo "AWS credentials configured"
 
-      - name: Deploy Infrastructure
+      - name: Preview Infrastructure (PRs)
+        if: github.event_name == 'pull_request'
+        id: preview
+        run: |
+          echo "=== Running Pulumi Preview ==="
+          pulumi preview --stack adamgordonbell-org/CA-prod --diff --show-replacement-steps --color=always 2>&1 | tee deploy_output.txt
+          echo "=== Preview Complete ==="
+          echo "DEPLOY_OUTPUT<<EOF" >> $GITHUB_ENV
+          cat deploy_output.txt >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ca-central-1
+
+      - name: Deploy Infrastructure (Push to main)
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         id: deploy
         run: |
           echo "=== Running Pulumi Up ==="
@@ -72,18 +89,20 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ca-central-1
 
-      - name: Comment PR with deployment results
+      - name: Comment PR with preview results
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const deployOutput = process.env.DEPLOY_OUTPUT || 'Deployment output not captured';
+            const deployOutput = process.env.DEPLOY_OUTPUT || 'Preview output not captured';
             const output = `
-            ## 🚀 Infrastructure Deployment Results
+            ## 👀 Infrastructure Preview Results
 
             **Stack**: CA-prod | **Region**: ca-central-1 | **Organization**: adamgordonbell-org
 
-            ### Deployment Output:
+            ⚠️ **This is a preview only** - no changes have been deployed. Changes will be applied when this PR is merged to main.
+
+            ### Preview Output:
             \`\`\`
             ${deployOutput}
             \`\`\`
