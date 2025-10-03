@@ -208,7 +208,7 @@ unused_alb = aws.lb.LoadBalancer(
     load_balancer_type="application",
     security_groups=[unused_sg.id],
     subnets=[public_subnet_1.id, public_subnet_2.id],
-    tags={"Name": "unused-alb", "Note": "Created for ingress testing, never configured"},
+    tags={"Name": "unused-alb", "Note": "Created for ingress testing - never configured"},
 )
 
 # Unattached EBS volume - orphaned from a deleted workload
