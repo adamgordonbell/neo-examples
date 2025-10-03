@@ -4,6 +4,16 @@
 
 This repository demonstrates the capabilities of **Pulumi Neo**, an infrastructure coding agent, through real-world infrastructure challenges. Each branch represents a distinct example scenario where Neo addresses a specific infrastructure problem or task.
 
+## Ground Rules for Infrastructure Changes
+
+When working with this project, follow these rules:
+
+1. **All infrastructure changes MUST use Pulumi CLI** (`pulumi up`, `pulumi destroy`, etc.) - never modify infrastructure directly
+2. **AWS CLI is for exploration only** - use it to inspect resources, but never to create, modify, or delete infrastructure
+3. **Region lock: ca-central-1 only** - all infrastructure must remain in Canada Central region
+4. **Stay in scope** - only touch infrastructure defined in this Pulumi program; never modify resources outside this project
+5. **Debugging with Pulumi** - if you need to recreate infrastructure for debugging, use `pulumi destroy` followed by `pulumi up`
+
 ## How It Works
 
 1. **Branch Structure**: Each branch contains infrastructure code with a specific problem or challenge
