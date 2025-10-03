@@ -34,7 +34,7 @@ This template provisions an EKS cluster with:
 
 Stack configuration values:
 
-- `aws:region` - The AWS region to deploy into (default: `ca-central-1`)
+- `aws:region` - The AWS region to deploy into (default: `us-west-2`)
 - Stack environment: `oidc/oidc` - Provides AWS credentials via OIDC
 
 View configuration with:

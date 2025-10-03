@@ -10,7 +10,7 @@ When working with this project, follow these rules:
 
 1. **All infrastructure changes MUST use Pulumi CLI** (`pulumi up`, `pulumi destroy`, etc.) - never modify infrastructure directly
 2. **AWS CLI is for exploration only** - use it to inspect resources, but never to create, modify, or delete infrastructure
-3. **Region lock: ca-central-1 only** - all infrastructure must remain in Canada Central region
+3. **Region lock: us-west-2 only** - all infrastructure must remain in US West (Oregon) region
 4. **Stay in scope** - only touch infrastructure defined in this Pulumi program; never modify resources outside this project
 5. **Debugging with Pulumi** - if you need to recreate infrastructure for debugging, use `pulumi destroy` followed by `pulumi up`
 
@@ -54,7 +54,7 @@ This ensures all infrastructure changes are reviewed before deployment, demonstr
 ## Stack Configuration
 
 - **Stack**: `adamgordonbell-org/CA-prod`
-- **Region**: `ca-central-1`
+- **Region**: `us-west-2`
 - **Provider**: AWS (EKS cluster with API authentication)
 
 ## Why This Matters

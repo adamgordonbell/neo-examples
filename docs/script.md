@@ -1,11 +1,8 @@
 
 ## **Pulumi Neo – Cost Optimization Script**
 
-\[AWS Cost Explorer filtered to ca-central-1 region showing current costs\]
- Here's my AWS infrastructure in Canada Central. I've got a few resources running here, but I suspect some of them aren't actually being used.
-
-\[AWS Console showing Load Balancers, Volumes, Security Groups\]
- Looking through the console, I can see a load balancer with no targets, an unattached EBS volume, and a security group that's not really protecting anything.
+\[AWS Resource Explorer showing resources in us-west-2\]
+ Here's the EC2 instances in my AWS account. I've got a few resources running here, but I suspect stuff I'm not using. Old volumes, unused load balancers. I'm not sure.
 
 \[Neo prompt being typed\]
  So in Pulumi Neo I ask: *"Can you identify and remove any unused resources?"*
@@ -25,8 +22,8 @@
 \[GitHub Action log showing `pulumi up` with delete operations\]
  Once it's merged, my GitHub Action runs `pulumi up` and removes the unused resources.
 
-\[AWS Cost Explorer showing reduced costs for ca-central-1\]
- And back in Cost Explorer, I can see the impact—those orphaned resources are gone, saving about $200 a year.
+\[AWS Resource Explorer showing fewer resources in us-west-2\]
+ And back in Resource Explorer, I can see the impact—those orphaned resources are gone, saving about $200 a year.
 
 \[Split screen: Cost before → Neo prompt → PR → Cost after\]
  In just a few minutes, Neo helped me identify waste, clean up my infrastructure, and reduce costs.
