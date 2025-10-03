@@ -26,7 +26,7 @@ public_subnet_1 = aws.ec2.Subnet(
     "public-subnet-1",
     vpc_id=vpc.id,
     cidr_block="10.0.1.0/24",
-    availability_zone="ca-central-1a",
+    availability_zone="us-west-2a",
     map_public_ip_on_launch=True,
     tags={
         "Name": "public-subnet-1",
@@ -38,7 +38,7 @@ public_subnet_2 = aws.ec2.Subnet(
     "public-subnet-2",
     vpc_id=vpc.id,
     cidr_block="10.0.2.0/24",
-    availability_zone="ca-central-1b",
+    availability_zone="us-west-2b",
     map_public_ip_on_launch=True,
     tags={
         "Name": "public-subnet-2",
@@ -214,7 +214,7 @@ demo_alb = aws.lb.LoadBalancer(
 # Data backup volume
 backup_volume = aws.ebs.Volume(
     "backup-data-volume",
-    availability_zone="ca-central-1a",
+    availability_zone="us-west-2a",
     size=10,
     type="gp3",
     tags={"Name": "backup-data-volume", "Purpose": "database-backups"},
@@ -226,4 +226,4 @@ backup_volume = aws.ebs.Volume(
 pulumi.export("cluster_name", cluster.eks_cluster.name)
 pulumi.export("kubeconfig", cluster.kubeconfig)
 pulumi.export("vpc_id", vpc.id)
-pulumi.export("region", "ca-central-1")
+pulumi.export("region", "us-west-2")

@@ -53,7 +53,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ca-central-1
+          AWS_DEFAULT_REGION: us-west-2
         run: |
           echo "AWS credentials configured"
 
@@ -71,7 +71,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ca-central-1
+          AWS_DEFAULT_REGION: us-west-2
 
       - name: Deploy Infrastructure (Push to main)
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
@@ -87,7 +87,7 @@ jobs:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ca-central-1
+          AWS_DEFAULT_REGION: us-west-2
 
       - name: Comment PR with preview results
         if: github.event_name == 'pull_request'
@@ -98,7 +98,7 @@ jobs:
             const output = `
             ## 👀 Infrastructure Preview Results
 
-            **Stack**: CA-prod | **Region**: ca-central-1 | **Organization**: adamgordonbell-org
+            **Stack**: CA-prod | **Region**: us-west-2 | **Organization**: adamgordonbell-org
 
             ⚠️ **This is a preview only** - no changes have been deployed. Changes will be applied when this PR is merged to main.
 
