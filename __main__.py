@@ -3,6 +3,7 @@
 import pulumi
 import pulumi_aws as aws
 import pulumi_eks as eks
+import pulumi_kubernetes as k8s
 
 # -----------------------------
 # Networking (simple & public)
@@ -134,11 +135,89 @@ system_ng = eks.ManagedNodeGroup(
     node_role=node_role,
     subnet_ids=subnet_ids,
     scaling_config=aws.eks.NodeGroupScalingConfigArgs(
-        min_size=0,
-        desired_size=0,
+        min_size=1,
+        desired_size=1,
         max_size=2,
     ),
     ami_type="AL2023_x86_64_STANDARD",
+)
+
+# -----------------------------
+# Kubernetes Workload (to show cluster is in use)
+# -----------------------------
+k8s_provider = k8s.Provider(
+    "k8s-provider",
+    kubeconfig=cluster.kubeconfig,
+)
+
+# Simple nginx deployment to demonstrate cluster is actively used
+nginx_deployment = k8s.apps.v1.Deployment(
+    "nginx-demo",
+    metadata=k8s.meta.v1.ObjectMetaArgs(
+        name="nginx-demo",
+        namespace="default",
+    ),
+    spec=k8s.apps.v1.DeploymentSpecArgs(
+        replicas=1,
+        selector=k8s.meta.v1.LabelSelectorArgs(
+            match_labels={"app": "nginx"},
+        ),
+        template=k8s.core.v1.PodTemplateSpecArgs(
+            metadata=k8s.meta.v1.ObjectMetaArgs(
+                labels={"app": "nginx"},
+            ),
+            spec=k8s.core.v1.PodSpecArgs(
+                containers=[
+                    k8s.core.v1.ContainerArgs(
+                        name="nginx",
+                        image="nginx:alpine",
+                        resources=k8s.core.v1.ResourceRequirementsArgs(
+                            requests={
+                                "cpu": "100m",
+                                "memory": "64Mi",
+                            },
+                            limits={
+                                "cpu": "200m",
+                                "memory": "128Mi",
+                            },
+                        ),
+                    )
+                ],
+            ),
+        ),
+    ),
+    opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=[system_ng]),
+)
+
+# -----------------------------
+# Unused Resources (to be identified and removed)
+# -----------------------------
+
+# Unused security group - not referenced by any resource
+unused_sg = aws.ec2.SecurityGroup(
+    "unused-security-group",
+    vpc_id=vpc.id,
+    description="Old security group from a deleted application - no longer needed",
+    tags={"Name": "unused-sg", "Note": "Created for test app that was removed"},
+)
+
+# Unused Application Load Balancer - no target groups, no listeners
+unused_alb = aws.lb.LoadBalancer(
+    "unused-alb",
+    internal=False,
+    load_balancer_type="application",
+    security_groups=[unused_sg.id],
+    subnets=[public_subnet_1.id, public_subnet_2.id],
+    tags={"Name": "unused-alb", "Note": "Created for ingress testing - never configured"},
+)
+
+# Unattached EBS volume - orphaned from a deleted workload
+unused_volume = aws.ebs.Volume(
+    "unused-ebs-volume",
+    availability_zone="ca-central-1a",
+    size=10,
+    type="gp3",
+    tags={"Name": "unused-volume", "Note": "Detached from deleted pod, no longer needed"},
 )
 
 # -----------------------------
