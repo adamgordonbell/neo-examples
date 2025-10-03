@@ -1,32 +1,35 @@
 
-## **Pulumi Neo – Kubernetes Scaling Script (Polished)**
+## **Pulumi Neo – Cost Optimization Script**
 
-\[k9s `:nodes` showing 2 nodes\]  
- Hey, here’s my Kubernetes cluster running on AWS. Right now it’s just two nodes, but I want to pre-scale it before a workload—I’ve got some training runs coming up.
+\[AWS Cost Explorer filtered to ca-central-1 region showing current costs\]
+ Here's my AWS infrastructure in Canada Central. I've got a few resources running here, but I suspect some of them aren't actually being used.
 
-\[Neo prompt being typed\]  
- So in Pulumi Neo I ask: *“Can you add a new node group?”*
+\[AWS Console showing Load Balancers, Volumes, Security Groups\]
+ Looking through the console, I can see a load balancer with no targets, an unattached EBS volume, and a security group that's not really protecting anything.
 
-\[Neo output showing new node group resource\]  
- Neo understands the request and generates the Pulumi code for that new group.
+\[Neo prompt being typed\]
+ So in Pulumi Neo I ask: *"Can you identify and remove any unused resources?"*
 
-\[Pulumi preview window with ✓ Create indicators\]  
- It shows me a preview—and we can see this is just an addition, nothing destructive. A safe change.
+\[Neo analyzing infrastructure, showing resource graph\]
+ Neo analyzes the infrastructure and identifies the orphaned resources—the ALB with no target groups, the unattached volume, and the unused security group.
 
-\[GitHub PR diff with new node group\]  
- Neo creates a pull request so I can review exactly what’s being added.
+\[Pulumi preview window with - Delete indicators\]
+ It shows me a preview of what will be removed. I can verify these are safe to delete without impacting my running workloads.
 
-\[“Human in the Loop” overlay beside PR\]  
- That’s the crucial guardrail: I stay in control, so nothing Neo does can accidentally take down prod.
+\[GitHub PR diff showing resources being removed from code\]
+ Neo creates a pull request so I can review exactly what's being deleted from my infrastructure as code.
 
-\[GitHub Action log showing `pulumi up`\]  
- Once it’s merged, my GitHub Action runs `pulumi up` and applies the change.
+\["Human in the Loop" overlay beside PR\]
+ That's the crucial guardrail: I stay in control. Nothing gets deleted until I approve it.
 
-\[k9s `:nodes` now showing 4 nodes, burst label highlighted\]  
- And back in Kubernetes, I can see the new nodes have joined the cluster.
+\[GitHub Action log showing `pulumi up` with delete operations\]
+ Once it's merged, my GitHub Action runs `pulumi up` and removes the unused resources.
 
-\[Split screen: Neo prompt → PR → k9s nodes\]  
- In under a minute, I’ve gone from a natural language request to scaled-up capacity in my cluster.
+\[AWS Cost Explorer showing reduced costs for ca-central-1\]
+ And back in Cost Explorer, I can see the impact—those orphaned resources are gone, saving about $200 a year.
 
-\[Pulumi Neo logo \+ pulumi.com/neo URL\]  
- Pulumi Neo makes it easy to manage Kubernetes at scale. Check it out today.
+\[Split screen: Cost before → Neo prompt → PR → Cost after\]
+ In just a few minutes, Neo helped me identify waste, clean up my infrastructure, and reduce costs.
+
+\[Pulumi Neo logo \+ pulumi.com/neo URL\]
+ Pulumi Neo makes cloud cost optimization easy. Check it out today.
