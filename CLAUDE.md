@@ -33,8 +33,13 @@ When working with this project, follow these rules:
 **Challenge**: Kubernetes capacity issues
 **Task**: Resize Kubernetes cluster by adding a new node group
 
-### Future Examples
-- **Unused Resources**: Identify and remove unused resources like load balancers not currently in use
+### `neo-three-unused-resources`
+**Challenge**: Cost optimization - unused infrastructure
+**Task**: Identify and remove unused resources:
+- Application Load Balancer with no target groups/listeners
+- Security group not referenced by any resource
+- Unattached EBS volume orphaned from deleted workload
+- Note: Cluster has active nginx deployment to demonstrate it's in use
 
 ## GitHub Actions Workflow
 
