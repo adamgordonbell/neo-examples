@@ -192,33 +192,7 @@ nginx_deployment = k8s.apps.v1.Deployment(
 # -----------------------------
 # Additional Infrastructure
 # -----------------------------
-
-# Security group for API gateway
-api_gateway_sg = aws.ec2.SecurityGroup(
-    "api-gateway-sg",
-    vpc_id=vpc.id,
-    description="Security group for API Gateway ingress",
-    tags={"Name": "api-gateway-sg", "Environment": "production"},
-)
-
-# Application load balancer for external traffic
-demo_alb = aws.lb.LoadBalancer(
-    "demo-ingress-alb",
-    internal=False,
-    load_balancer_type="application",
-    security_groups=[api_gateway_sg.id],
-    subnets=[public_subnet_1.id, public_subnet_2.id],
-    tags={"Name": "demo-ingress-alb", "Environment": "production"},
-)
-
-# Data backup volume
-backup_volume = aws.ebs.Volume(
-    "backup-data-volume",
-    availability_zone="us-west-2a",
-    size=10,
-    type="gp3",
-    tags={"Name": "backup-data-volume", "Purpose": "database-backups"},
-)
+# (Unused resources removed for cleanup)
 
 # -----------------------------
 # Exports
