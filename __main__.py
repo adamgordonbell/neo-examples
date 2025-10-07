@@ -192,6 +192,30 @@ nginx_deployment = k8s.apps.v1.Deployment(
 # -----------------------------
 # Additional Infrastructure
 # -----------------------------
+# S3 Bucket for application data storage
+s3_bucket = aws.s3.Bucket(
+    "app-data-bucket",
+    versioning=aws.s3.BucketVersioningArgs(enabled=True),
+    server_side_encryption_configuration=aws.s3.BucketServerSideEncryptionConfigurationArgs(
+        rule=aws.s3.BucketServerSideEncryptionConfigurationRuleArgs(
+            apply_server_side_encryption_by_default=aws.s3.BucketServerSideEncryptionConfigurationRuleApplyServerSideEncryptionByDefaultArgs(
+                sse_algorithm="AES256"
+            )
+        )
+    ),
+    public_access_block=aws.s3.BucketPublicAccessBlockArgs(
+        block_public_acls=True,
+        block_public_policy=True,
+        ignore_public_acls=True,
+        restrict_public_buckets=True,
+    ),
+    tags={
+        "Name": "app-data-bucket",
+        "Environment": "development",
+        "Owner": "v-adam@pulumi.com",
+    },
+)
+
 # Removed unused resources:
 # - api_gateway_sg: Security group with no API Gateway
 # - demo_alb: Load balancer with no target groups or listeners
@@ -204,3 +228,5 @@ pulumi.export("cluster_name", cluster.eks_cluster.name)
 pulumi.export("kubeconfig", cluster.kubeconfig)
 pulumi.export("vpc_id", vpc.id)
 pulumi.export("region", "us-west-2")
+pulumi.export("s3_bucket_name", s3_bucket.bucket)
+pulumi.export("s3_bucket_arn", s3_bucket.arn)
