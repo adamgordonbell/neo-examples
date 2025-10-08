@@ -1,7 +1,7 @@
 
 ## **Pulumi Neo – Cost Optimization Script**
 
-\[AWS Resource Explorer showing resources in us-west-2\]
+\[AWS Resource Explorer showing resources in ca-central-1\]
  Here's the EC2 instances in my AWS account. I've got a few resources running here, but I suspect stuff I'm not using. Old volumes, unused load balancers. I'm not sure.
 
 \[Neo prompt being typed\]
@@ -22,7 +22,7 @@
 \[GitHub Action log showing `pulumi up` with delete operations\]
  Once it's merged, my GitHub Action runs `pulumi up` and removes the unused resources.
 
-\[AWS Resource Explorer showing fewer resources in us-west-2\]
+\[AWS Resource Explorer showing fewer resources in ca-central-1\]
  And back in Resource Explorer, I can see the impact—those orphaned resources are gone, saving about $200 a year.
 
 \[Split screen: Cost before → Neo prompt → PR → Cost after\]

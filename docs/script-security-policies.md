@@ -1,7 +1,7 @@
 
 ## **Pulumi Neo – Security Policy Enforcement Script**
 
-\[AWS Console showing security groups in us-west-2\]
+\[AWS Console showing security groups in ca-central-1\]
 Here are the security groups in my AWS account. I've got infrastructure running, but I'm not sure if everything follows our security best practices.
 
 \[Pulumi Policy Pack configuration visible\]
