@@ -193,7 +193,7 @@ nginx_deployment = k8s.apps.v1.Deployment(
 # Additional Infrastructure
 # -----------------------------
 
-# Bastion host security group - allows SSH from anywhere (SECURITY RISK!)
+# Bastion host security group - allows SSH from within VPC only
 bastion_sg = aws.ec2.SecurityGroup(
     "bastion-sg",
     vpc_id=vpc.id,
@@ -203,8 +203,8 @@ bastion_sg = aws.ec2.SecurityGroup(
             protocol="tcp",
             from_port=22,
             to_port=22,
-            cidr_blocks=["0.0.0.0/0"],
-            description="Allow SSH from anywhere",
+            cidr_blocks=["10.0.0.0/16"],
+            description="Allow SSH from within VPC",
         ),
     ],
     egress=[
