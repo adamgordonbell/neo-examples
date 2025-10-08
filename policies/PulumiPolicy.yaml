@@ -1,0 +1,2 @@
+runtime: nodejs
+description: AWS security policies to prevent overly permissive security group rules

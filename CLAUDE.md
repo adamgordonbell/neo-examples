@@ -41,6 +41,13 @@ When working with this project, follow these rules:
 - Unattached EBS volume orphaned from deleted workload
 - Note: Cluster has active nginx deployment to demonstrate it's in use
 
+### `neo-four-security-policies`
+**Challenge**: Security compliance - overly permissive security group rules
+**Task**: Fix security group that allows SSH (port 22) access from the internet (0.0.0.0/0)
+- Pulumi Policy Pack enforces security best practices
+- Policy automatically flags violations during preview/up
+- Restrict access to specific IP ranges or remove the rule
+
 ## GitHub Actions Workflow
 
 The repository uses a single workflow (`.github/workflows/infrastructure-preview.yml`) that:
@@ -60,9 +67,10 @@ This ensures all infrastructure changes are reviewed before deployment, demonstr
 ## Why This Matters
 
 This repository serves as a portfolio of Pulumi Neo's capabilities:
-- Solving security issues (encryption)
+- Solving security issues (encryption, overly permissive access)
 - Scaling infrastructure (node groups)
 - Optimizing costs (removing unused resources)
+- Enforcing compliance (Policy as Code)
 - Working within standard DevOps workflows (GitOps, PR reviews, automated deployments)
 
 Each example demonstrates Neo's ability to understand infrastructure context, make appropriate changes, and integrate with existing CI/CD pipelines.

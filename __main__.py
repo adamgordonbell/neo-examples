@@ -192,10 +192,32 @@ nginx_deployment = k8s.apps.v1.Deployment(
 # -----------------------------
 # Additional Infrastructure
 # -----------------------------
-# Removed unused resources:
-# - api_gateway_sg: Security group with no API Gateway
-# - demo_alb: Load balancer with no target groups or listeners
-# - backup_volume: EBS volume with no database to back up
+
+# Bastion host security group - allows SSH from anywhere (SECURITY RISK!)
+bastion_sg = aws.ec2.SecurityGroup(
+    "bastion-sg",
+    vpc_id=vpc.id,
+    description="Security group for bastion host SSH access",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            protocol="tcp",
+            from_port=22,
+            to_port=22,
+            cidr_blocks=["0.0.0.0/0"],
+            description="Allow SSH from anywhere",
+        ),
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            protocol="-1",
+            from_port=0,
+            to_port=0,
+            cidr_blocks=["0.0.0.0/0"],
+            description="Allow all outbound traffic",
+        ),
+    ],
+    tags={"Name": "bastion-sg", "Purpose": "ssh-access"},
+)
 
 # -----------------------------
 # Exports

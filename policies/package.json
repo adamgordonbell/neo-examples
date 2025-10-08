@@ -1,0 +1,13 @@
+{
+  "name": "aws-security-policies",
+  "version": "1.0.0",
+  "description": "Security policies for AWS infrastructure to prevent overly permissive access",
+  "main": "index.ts",
+  "dependencies": {
+    "@pulumi/policy": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
